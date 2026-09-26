@@ -1,0 +1,46 @@
+# OpenBedside configuration. Every value shown is the default.
+# Run with:  openbedside run -c config/example.toml
+
+[gateway]
+name = "OpenBedside"            # MSH-3, sending application
+facility = "GATEWAY"            # MSH-4, sending facility
+database = "openbedside.db"     # SQLite file: outbox and event log
+periodic_seconds = 60           # send a snapshot at least this often per device
+offline_after_seconds = 30      # silence longer than this = communication lost
+
+[ehr]
+host = "127.0.0.1"              # the hospital interface engine (or: openbedside ehr-sim)
+port = 6661
+receiving_app = "EHR"           # MSH-5
+receiving_facility = "HOSP"     # MSH-6
+
+[orders]
+enabled = true                  # PCD-03 listener. Routes to the simulator only.
+host = "127.0.0.1"
+port = 6662
+
+[ui]
+host = "127.0.0.1"              # keep on localhost: no encryption yet
+port = 8080
+
+[registry]
+unknown_devices = "hold"        # hold: unregistered devices are shown, never sent
+                                # send: sent with patient Unknown and no location (lab use)
+
+[patients]
+assigning_authority = "HOSP"    # PID-3.4 when a source does not supply one
+
+[adt]
+enabled = true                  # ADT listener: which patient is in which bed
+host = "127.0.0.1"
+port = 6663
+
+# One block per adapter. "simulator" is built in; anything else is
+# "python.module:ClassName" (see docs/ADAPTER-SDK.md).
+[[adapters]]
+type = "simulator"
+device_id = "SIM-0001"
+speed = 60                      # simulated seconds per real second
+tick_seconds = 1
+# The simulator registers itself at this location, with association by ADT location on.
+preregister = { unit = "ICU", room = "101", bed = "A", assoc_adt = true }

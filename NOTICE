@@ -1,0 +1,11 @@
+OpenBedside
+Copyright 2026 Daniel C. Pettus
+
+Licensed under the Apache License, Version 2.0 (see LICENSE).
+
+OpenBedside is not a medical device and is not for clinical use. See DISCLAIMER.md.
+
+No part of this project is proprietary to any device manufacturer. It was designed
+from public sources: the IHE Devices Technical Framework, ISO/IEEE 11073 nomenclature
+as published, FDA guidance, and the author's own experience. "ACME" in the worked
+example is fictional, and its protocol is invented.

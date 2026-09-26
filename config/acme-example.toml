@@ -1,0 +1,17 @@
+# The worked example: the gateway talking to the fictional ACME pump.
+#   tab 1:  openbedside fake-pump
+#   tab 2:  openbedside ehr-sim
+#   tab 3:  openbedside run -c ~/Documents/OpenBedside/config/acme-example.toml
+# Or check the adapter without any EHR:
+#   openbedside check -c ~/Documents/OpenBedside/config/acme-example.toml --seconds 20 --show-hl7
+
+[gateway]
+database = "openbedside-acme.db"
+
+[orders]
+enabled = false                 # real-device adapters never take programming requests
+
+[[adapters]]
+type = "acme-example"           # short name for openbedside.examples.acme_json:AcmeJsonAdapter
+host = "127.0.0.1"
+port = 7001
