@@ -1,0 +1,52 @@
+# OpenBedside, VistA medication pass demo.
+# Run with:  openbedside demo -c config/vista-demo.toml
+#
+# One simulated two-channel pump, both channels idle, sitting in the VistA demo
+# patient's bed. Nothing infuses until the phone app scans the wristband, the bag
+# and the pump. Then the bridge sends a PCD-03 order and channel A starts the bag.
+# Synthetic data only. Keep everything on localhost: there is no encryption.
+
+[gateway]
+name = "OpenBedside"
+facility = "GATEWAY"
+database = "openbedside-vista.db"   # separate from the everyday demo database
+periodic_seconds = 60
+offline_after_seconds = 30
+
+[ehr]
+host = "127.0.0.1"
+port = 6661
+receiving_app = "VISTA"
+receiving_facility = "VEHU"
+
+[orders]
+enabled = true                      # the phone app programs the pump through this
+host = "127.0.0.1"
+port = 6662
+
+[ui]
+host = "127.0.0.1"
+port = 8080
+
+[registry]
+unknown_devices = "hold"
+
+[patients]
+assigning_authority = "VEHU"        # the WorldVistA demo system
+
+[adt]
+enabled = false                     # no ADT feed in this demo: the scan is the association
+
+[[adapters]]
+type = "simulator"
+device_id = "SIM-0001"
+speed = 60                          # one real minute = one simulated hour, so a 60 minute bag finishes on camera
+tick_seconds = 1
+rate_change = false
+modules = [
+  { id = "A", status = "idle" },
+  { id = "B", status = "idle" },
+]
+# The pump lives in the demo patient's bed: GEN MED B-6.
+# Association comes from the nurse's scan (manual), never from ADT.
+preregister = { unit = "GEN MED", room = "B", bed = "6", assoc_adt = false, assoc_manual = true }

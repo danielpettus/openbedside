@@ -9,6 +9,22 @@ Scenario, in simulated time (speed-up set in config):
             while the secondary runs, then resumes on its own.
 When a source empties the channel drops to KVO, which is still infusing.
 All values are synthetic. Nothing here is dosing guidance.
+
+A different scenario can be given in the adapter's config, for demonstrations:
+
+  [[adapters]]
+  type = "simulator"
+  device_id = "SIM-0001"
+  rate_change = false
+  modules = [
+    { id = "A", status = "infusing",
+      primary = { drug = "cefazolin 1 g in sodium chloride 0.9% 100 mL", conc = [10, "mg/mL"], rate = 100, vtbi = 100 } },
+    { id = "B", status = "idle" },
+  ]
+
+Each source takes drug, rate (mL/h), vtbi (mL), and optionally conc = [value, "unit"],
+dose_unit and delivered. A module takes id, status (infusing or idle), primary and
+secondary.
 """
 from __future__ import annotations
 
@@ -57,15 +73,35 @@ class SimulatorAdapter(DeviceAdapter):
         self.speed = float(config.get("speed", 60))           # simulated seconds per real second
         self.tick = float(config.get("tick_seconds", 1.0))
         self.sim_elapsed = 0.0
-        self.mods = {
-            "A": _Mod("SIM-0001-A", primary=_Src(SourceRole.PRIMARY, "heparin", Quantity(100, "[iU]/mL"),
+        if config.get("modules"):
+            self.mods = {str(m["id"]): self._module(m) for m in config["modules"]}
+            self.rate_change_done = not config.get("rate_change", False)
+        else:
+            d = self.device_id
+            self.mods = {
+                "A": _Mod(f"{d}-A", primary=_Src(SourceRole.PRIMARY, "heparin", Quantity(100, "[iU]/mL"),
                                                   12.0, 250.0, dose_unit="[iU]/h"), status=PumpStatus.INFUSING),
-            "B": _Mod("SIM-0001-B",
-                      primary=_Src(SourceRole.PRIMARY, "sodium chloride 0.9%", None, 100.0, 1000.0),
-                      secondary=_Src(SourceRole.SECONDARY, "vancomycin", Quantity(4, "mg/mL"), 166.6667, 250.0),
-                      status=PumpStatus.INFUSING),
-        }
-        self.rate_change_done = False
+                "B": _Mod(f"{d}-B",
+                          primary=_Src(SourceRole.PRIMARY, "sodium chloride 0.9%", None, 100.0, 1000.0),
+                          secondary=_Src(SourceRole.SECONDARY, "vancomycin", Quantity(4, "mg/mL"), 166.6667, 250.0),
+                          status=PumpStatus.INFUSING),
+            }
+            self.rate_change_done = not config.get("rate_change", True)
+
+    def _source(self, role: SourceRole, spec: Optional[dict]) -> Optional[_Src]:
+        if not spec:
+            return None
+        conc = spec.get("conc")
+        return _Src(role, str(spec.get("drug", "unnamed")),
+                    Quantity(float(conc[0]), str(conc[1])) if conc else None,
+                    float(spec["rate"]), float(spec["vtbi"]), float(spec.get("delivered", 0.0)),
+                    spec.get("dose_unit"))
+
+    def _module(self, spec: dict) -> _Mod:
+        primary = self._source(SourceRole.PRIMARY, spec.get("primary"))
+        secondary = self._source(SourceRole.SECONDARY, spec.get("secondary"))
+        status = PumpStatus(spec.get("status", "infusing" if (primary or secondary) else "idle"))
+        return _Mod(f"{self.device_id}-{spec['id']}", primary=primary, secondary=secondary, status=status)
 
     def owns(self, device_id: str) -> bool:
         """True for this device's id or any of its module ids."""
@@ -74,7 +110,7 @@ class SimulatorAdapter(DeviceAdapter):
     # ---- simulation ---------------------------------------------------------
     def step(self, sim_seconds: float) -> None:
         self.sim_elapsed += sim_seconds
-        if not self.rate_change_done and self.sim_elapsed >= 30 * 60 and self.mods["A"].primary:
+        if not self.rate_change_done and self.sim_elapsed >= 30 * 60 and "A" in self.mods and self.mods["A"].primary:
             self.mods["A"].primary.rate = 14.0
             self.rate_change_done = True
         for m in self.mods.values():

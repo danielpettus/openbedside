@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- **Simulator scenarios from config.** An adapter block can list `modules`, each with a
+  status and an optional primary and secondary infusion, and `rate_change = false` turns
+  off the scripted rate change. Without `modules` the simulator behaves exactly as in 0.2.0.
+- **config/vista-demo.toml.** A two-channel pump, both channels idle, in bed GEN MED B-6,
+  association by manual scan only, its own database. Used by the open medication pass
+  demonstration, where a phone app programs the pump with a PCD-03 order.
+
 ## 0.2.0 (26 September 2026)
 
 - **Device registry.** Devices are registered by vendor plus device id before anything
@@ -23,6 +32,7 @@
   Patient identifiers masked for viewers who are not signed in.
 - Adapters: `Device.reported_patient_id` replaces `patient_id`; `Device.kind`.
 - Docs updated throughout; tests: 36.
+- Published at github.com/danielpettus/openbedside; START-HERE gains "Step 0. Get OpenBedside".
 
 
 ## 0.1.0 (26 September 2026)

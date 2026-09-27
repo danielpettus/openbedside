@@ -104,3 +104,19 @@ def test_check_command_passes_on_acme_example():
         await asyncio.gather(t, return_exceptions=True)
         return rc
     assert asyncio.run(scenario()) == 0
+
+
+def test_simulator_scenario_from_config():
+    from openbedside.adapters.simulator import SimulatorAdapter
+    from openbedside.model import PumpStatus
+    a = SimulatorAdapter({"device_id": "SIM-0009", "rate_change": False, "modules": [
+        {"id": "A", "status": "infusing",
+         "primary": {"drug": "cefazolin 1 g in sodium chloride 0.9% 100 mL", "conc": [10, "mg/mL"], "rate": 100, "vtbi": 100}},
+        {"id": "B", "status": "idle"}]}, lambda d: None)
+    d = a.snapshot()
+    assert [m.module_id for m in d.modules] == ["SIM-0009-A", "SIM-0009-B"]
+    assert d.modules[0].channels[0].actual_rate.value == 100
+    assert d.modules[1].channels[0].status == PumpStatus.IDLE
+    a.step(3600)                                   # one simulated hour: the 100 mL bag is done
+    assert a.mods["A"].status == PumpStatus.KVO
+    assert all(f.level != validate.ERROR for f in validate.check_device(a.snapshot()))
