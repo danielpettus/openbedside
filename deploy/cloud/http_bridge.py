@@ -141,6 +141,8 @@ def pump_state() -> dict:
                     "delivered_ml": ((src or {}).get("volume_delivered") or {}).get("value")},
         "association": {"state": a.get("state"), "patient": patient, "source": a.get("source"), "detail": a.get("detail")},
         "to_ehr_pcd01": out.get("counts", {}),
+        "recent_pcd01": [{k: m.get(k) for k in ("id", "control_id", "status", "attempts", "last_result")}
+                         for m in (out.get("recent") or [])[:5]],   # OpenBedside lists newest first
         "fhir": fhir_devices(dev, ch, src, patient),
     }
 
@@ -238,6 +240,67 @@ def allowed(addr: str) -> bool:
         return True
 
 
+# ---- a page a person can read -----------------------------------------------------------
+# Added 30 Sept 2026. The health check answers {"ok": true} and nothing else, which is right
+# for a machine and useless to a visitor who clicked a link to "see it running". The root
+# address now serves this page to browsers; scripts that ask for JSON still get JSON.
+STATUS_HTML = """<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OpenBedside cloud demo</title>
+<style>
+:root{--navy:#2C3E50;--steel:#5D7A94;--mist:#8FA3B3;--fog:#E3E9EE;--ink:#243240}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font:15px/1.5 -apple-system,"Segoe UI",Helvetica,Arial,sans-serif;color:var(--ink);background:linear-gradient(160deg,#EEF3F7,#DCE6EE);min-height:100vh;padding:0 16px 40px}
+.sim{background:#FFF4D6;color:#8A6D1F;font-weight:800;text-align:center;padding:8px;font-size:13px;margin:0 -16px}
+.wrap{max-width:900px;margin:0 auto;padding-top:24px}
+h1{font-family:Cambria,Georgia,serif;color:var(--navy);font-size:30px;margin-bottom:6px}
+.lead{color:var(--steel);margin-bottom:20px;max-width:70ch}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+.card{background:#fff;border:1px solid #D9E0E6;border-radius:14px;padding:20px;box-shadow:0 10px 28px rgba(36,50,64,.07)}
+.card h2{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--steel);margin-bottom:10px}
+.big{font-size:34px;font-weight:700;color:var(--navy)} .big small{font-size:15px;color:var(--steel)}
+.st{display:inline-block;border-radius:6px;padding:2px 9px;font-weight:800;font-size:12px;background:#DFF0E6;color:#1C5138}
+.st.w{background:#FFF4D6;color:#8A6D1F}
+.bar{height:9px;background:var(--fog);border-radius:6px;overflow:hidden;margin:10px 0 4px}.bar div{height:100%;background:var(--steel)}
+.k{color:var(--steel);font-size:13px}
+table{width:100%;border-collapse:collapse;font-size:13px;margin-top:4px}
+td,th{text-align:left;padding:5px 4px;border-bottom:1px solid #EDF1F5} th{color:var(--steel);font-weight:600}
+code{font:12px Menlo,Consolas,monospace;background:#F4F7FA;padding:1px 5px;border-radius:5px}
+a{color:var(--navy)} .foot{margin-top:22px;font-size:12px;color:var(--mist)}
+</style></head><body>
+<div class="sim">SIMULATED DEVICE · SYNTHETIC PATIENT · NOT A MEDICAL DEVICE</div>
+<div class="wrap">
+<h1>OpenBedside, running in the cloud</h1>
+<p class="lead">This is the open-source OpenBedside gateway, live on a cloud server, with one simulated two-channel infusion pump and a stand-in EHR. Everything below is read from the running gateway every few seconds.</p>
+<div class="grid">
+ <div class="card"><h2>Pump SIM-0001, channel A</h2><div id="pump" class="k">Reading the gateway&hellip;</div></div>
+ <div class="card"><h2>Messages to the EHR (IHE PCD-01)</h2><div id="msgs" class="k">&hellip;</div></div>
+</div>
+<div class="card" style="margin-top:16px"><h2>For machines</h2>
+<p class="k">The same state as JSON, including FHIR Device and Observation resources: <a href="/pump"><code>/pump</code></a>. Health check: <a href="/health"><code>/health</code></a>. Source: <a href="https://github.com/danielpettus/openbedside">github.com/danielpettus/openbedside</a>. What uses it: <a href="https://aimedagent.net/openbedside.html">aimedagent.net/openbedside.html</a>.</p></div>
+<p class="foot">OpenBedside is free and open source (Apache 2.0). It has no encryption of its own yet; this server's HTTPS is the only protection on the wire, which is why every patient here is synthetic. Changes to the pump need a key.</p>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+async function tick(){
+  let s; try{ s=await (await fetch("/pump",{headers:{Accept:"application/json"}})).json(); }catch(e){ $("pump").textContent="The gateway did not answer. It may be waking up; this page keeps trying."; return; }
+  if(!s.ok){ $("pump").textContent=s.error||"No pump"; return; }
+  const c=s.channel,a=s.association||{},pct=c.vtbi_ml?Math.min(100,(c.delivered_ml||0)/c.vtbi_ml*100):0;
+  $("pump").innerHTML='<div class="big">'+esc(c.rate_ml_h)+' <small>mL/h</small></div>'
+    +'<span class="st'+(c.status==="infusing"?"":" w")+'">'+esc(String(c.status).toUpperCase())+'</span>'
+    +'<p style="margin-top:8px">'+esc(c.drug||"no program")+'</p>'
+    +(c.vtbi_ml?'<div class="bar"><div style="width:'+pct.toFixed(0)+'%"></div></div><p class="k">'+(c.delivered_ml||0).toFixed(1)+' of '+esc(c.vtbi_ml)+' mL delivered</p>':"")
+    +'<p class="k" style="margin-top:8px">Bound to synthetic patient '+esc(a.patient||"none")+' ('+esc(a.source||"-")+'). Observed '+esc((s.device.observed_at||"").slice(11,19))+' UTC.</p>';
+  const cnt=s.to_ehr_pcd01||{}, rec=s.recent_pcd01||[];
+  $("msgs").innerHTML='<p><b>'+esc(Object.entries(cnt).map(([k,v])=>v+" "+k).join(", ")||"none yet")+'</b></p>'
+    +(rec.length?'<table><tr><th>Control id, newest first</th><th>Status</th><th>Ack</th></tr>'+rec.map(m=>'<tr><td><code>'+esc(m.control_id)+'</code></td><td>'+esc(m.status)+'</td><td>'+esc(m.last_result)+'</td></tr>').join("")+'</table>':"")
+    +'<p class="k" style="margin-top:8px">Each one is a standard HL7 v2 observation message, acknowledged by the stand-in EHR.</p>';
+}
+tick(); setInterval(tick,3000);
+</script></body></html>"""
+
+
 # ---- server -----------------------------------------------------------------------------
 
 def serve(port: int, host: str = "127.0.0.1") -> None:
@@ -264,6 +327,9 @@ def serve(port: int, host: str = "127.0.0.1") -> None:
             p = urlparse(self.path).path.rstrip("/")
             if p == "/pump":
                 return self._json(pump_state() | {"notice": NOTICE})
+            wants_html = "text/html" in (self.headers.get("Accept") or "")
+            if p == "/status" or (p == "" and wants_html):
+                return self._send(200, STATUS_HTML.encode(), "text/html; charset=utf-8")
             if p == "/health":
                 s = pump_state()
                 return self._json({"ok": bool(s.get("ok")), "openbedside": "up" if s.get("ok") else "down"},

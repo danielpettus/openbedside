@@ -14,6 +14,8 @@
   `SCENARIO` keeps a bag running. Includes a Dockerfile and a Render Blueprint
   (`render.yaml`). Simulated devices and synthetic data only; the host's HTTPS is the only
   encryption.
+- **Cloud demo status page.** The bridge's root address serves a readable, self-refreshing page to
+  browsers (pump state and recent PCD-01 messages); scripts asking for JSON still get JSON.
 
 ## 0.2.0 (26 September 2026)
 

@@ -12,6 +12,7 @@ its HL7 listeners (6661, 6662, 8080) stay on 127.0.0.1 inside the container.
 
 | Request | Who | What it does |
 | --- | --- | --- |
+| `GET /` in a browser | anyone | a live status page: the pump and the last PCD-01 messages to the stand-in EHR |
 | `GET /pump` | anyone | pump state plus FHIR resources, marked SIMULATED |
 | `GET /health` | anyone | is OpenBedside up |
 | `POST /pump/associate` | needs `X-Demo-Key` | bind the pump to a patient id |
