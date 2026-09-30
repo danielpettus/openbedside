@@ -1,0 +1,7 @@
+.git
+dist
+_to_delete
+**/__pycache__
+*.db
+*.db-journal
+.venv

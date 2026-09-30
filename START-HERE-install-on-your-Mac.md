@@ -4,6 +4,19 @@ About 15 minutes the first time. You type the commands in **Terminal**
 (Applications > Utilities > Terminal). Copy each line exactly. Linux is the same;
 Windows notes are in [docs/USER-GUIDE.md](docs/USER-GUIDE.md).
 
+## Step 0. Get OpenBedside
+
+Either way ends with a folder called **OpenBedside** in your **Documents** folder.
+
+- **Download:** go to **github.com/danielpettus/openbedside/releases/latest**, download
+  `OpenBedside-<version>-kit.zip`, and double-click it. Rename the folder it makes to
+  `OpenBedside` and move it into Documents.
+- **Or with git:**
+
+```
+git clone https://github.com/danielpettus/openbedside.git ~/Documents/OpenBedside
+```
+
 ## Step 1. Do you already have a new enough Python?
 
 ```

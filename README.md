@@ -5,6 +5,10 @@ Infusion pumps first. Built so it can be extended to ventilators and other devic
 
 > **Not a medical device. Not for clinical use.** See [DISCLAIMER.md](DISCLAIMER.md).
 
+**Get it:** [github.com/danielpettus/openbedside](https://github.com/danielpettus/openbedside).
+The ready-to-use kit, with every guide as a PDF, is under
+[Releases](https://github.com/danielpettus/openbedside/releases/latest).
+
 ## Why I built it
 
 My reason is a selfish one, and I would rather say so up front.

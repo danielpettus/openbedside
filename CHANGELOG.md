@@ -8,6 +8,12 @@
 - **config/vista-demo.toml.** A two-channel pump, both channels idle, in bed GEN MED B-6,
   association by manual scan only, its own database. Used by the open medication pass
   demonstration, where a phone app programs the pump with a PCD-03 order.
+- **Cloud demo (deploy/cloud).** One container: gateway, simulated pump and stand-in EHR,
+  with a single public port served by `http_bridge.py` (pump state as JSON and as FHIR
+  Device and Observation resources). Writes need a demo key and are rate limited; a
+  `SCENARIO` keeps a bag running. Includes a Dockerfile and a Render Blueprint
+  (`render.yaml`). Simulated devices and synthetic data only; the host's HTTPS is the only
+  encryption.
 
 ## 0.2.0 (26 September 2026)
 

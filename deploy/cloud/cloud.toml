@@ -1,0 +1,47 @@
+# OpenBedside in a cloud container: one simulated two-channel pump and the stand-in EHR.
+# Everything here listens on 127.0.0.1 INSIDE the container. The only public port is
+# http_bridge.py. Synthetic data only: this release has no encryption of its own, so
+# the host's HTTPS is the only protection on the wire.
+
+[gateway]
+name = "OpenBedside"
+facility = "CLOUD-DEMO"
+database = "/data/openbedside-cloud.db"   # the container's own disk; gone on restart, on purpose
+periodic_seconds = 60
+offline_after_seconds = 30
+
+[ehr]
+host = "127.0.0.1"
+port = 6661
+receiving_app = "STAND-IN-EHR"
+receiving_facility = "CLOUD-DEMO"
+
+[orders]
+enabled = true
+host = "127.0.0.1"
+port = 6662
+
+[ui]
+host = "127.0.0.1"
+port = 8080
+
+[registry]
+unknown_devices = "hold"
+
+[patients]
+assigning_authority = "ORACLE-SANDBOX"
+
+[adt]
+enabled = false
+
+[[adapters]]
+type = "simulator"
+device_id = "SIM-0001"
+speed = 10
+tick_seconds = 1
+rate_change = false
+modules = [
+  { id = "A", status = "idle" },
+  { id = "B", status = "idle" },
+]
+preregister = { unit = "CLOUD", room = "1", bed = "1", assoc_adt = false, assoc_manual = true }
